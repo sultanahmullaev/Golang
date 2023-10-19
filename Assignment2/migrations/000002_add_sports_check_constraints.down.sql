@@ -1,0 +1,1 @@
+ALTER TABLE sports DROP CONSTRAINT IF EXISTS sports_equipment_number_check CHECK (sports_equipment_number >= 0);

@@ -23,7 +23,7 @@ func ValidateSport(v *validator.Validator, sport *Sports) {
 	v.Check(len(sport.Title) <= 100, "title", "must not be more than 100 bytes long")
 	v.Check(sport.Description != "", "description", "must be provided")
 	v.Check(len(sport.Description) <= 3000, "description", "must not be more than 3000 bytes long")
-	v.Check(sport.Type != "", "ty", "must be provided")
+	v.Check(sport.Type != "", "type", "must be provided")
 	v.Check(len(sport.Type) <= 300, "type", "must not be more than 300 bytes long")
 	v.Check(sport.Brand != "", "brand", "must be provided")
 	v.Check(len(sport.Brand) <= 300, "brand", "must not be more than 300 bytes long")
