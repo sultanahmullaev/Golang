@@ -97,12 +97,12 @@ func (app *application) updateSportHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	var input struct {
-		Title                 string                     `json:"title"`
-		Description           string                     `json:"description"`
-		Type                  string                     `json:"type"`
-		Brand                 string                     `json:"brand"`
-		Sex                   string                     `json:"sex"`
-		SportsEquipmentNumber data.SportsEquipmentNumber `json:"sports_equipment_number"`
+		Title                 *string                     `json:"title"`
+		Description           *string                     `json:"description"`
+		Type                  *string                     `json:"type"`
+		Brand                 *string                     `json:"brand"`
+		Sex                   *string                     `json:"sex"`
+		SportsEquipmentNumber *data.SportsEquipmentNumber `json:"sports_equipment_number"`
 	}
 
 	err = app.readJSON(w, r, &input)
@@ -111,14 +111,27 @@ func (app *application) updateSportHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	sport.Title = input.Title
-	sport.Description = input.Description
-	sport.Type = input.Type
-	sport.Brand = input.Brand
-	sport.Sex = input.Sex
-	sport.SportsEquipmentNumber = input.SportsEquipmentNumber
+	if input.Title != nil {
+		sport.Title = *input.Title
+	}
+	if input.Description != nil {
+		sport.Description = *input.Description
+	}
+	if input.Type != nil {
+		sport.Type = *input.Type
+	}
+	if input.Brand != nil {
+		sport.Brand = *input.Brand
+	}
+	if input.Sex != nil {
+		sport.Sex = *input.Sex
+	}
+	if input.SportsEquipmentNumber != nil {
+		sport.SportsEquipmentNumber = *input.SportsEquipmentNumber
+	}
 
 	v := validator.New()
+
 	if data.ValidateSport(v, sport); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
@@ -126,7 +139,12 @@ func (app *application) updateSportHandler(w http.ResponseWriter, r *http.Reques
 
 	err = app.models.Sports.Update(sport)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
 		return
 	}
 

@@ -15,7 +15,7 @@ func (app *application) routes() *httprouter.Router {
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/sports", app.createSportHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/sports/:id", app.showSportHandler)
-	router.HandlerFunc(http.MethodPut, "/v1/sports/:id", app.updateSportHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/sports/:id", app.updateSportHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/sports/:id", app.deleteSportHandler)
 
 	return router

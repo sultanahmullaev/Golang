@@ -1,6 +1,7 @@
 package data
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"time"
@@ -45,7 +46,10 @@ func (s SportsModel) Insert(sport *Sports) error {
 
 	args := []interface{}{sport.Title, sport.Description, sport.Type, sport.Brand, sport.Sex, sport.SportsEquipmentNumber}
 
-	return s.DB.QueryRow(query, args...).Scan(&sport.ID, &sport.CreatedAt, &sport.Version)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	return s.DB.QueryRowContext(ctx, query, args...).Scan(&sport.ID, &sport.CreatedAt, &sport.Version)
 }
 
 func (s SportsModel) Get(id int64) (*Sports, error) {
@@ -60,7 +64,11 @@ func (s SportsModel) Get(id int64) (*Sports, error) {
 
 	var sport Sports
 
-	err := s.DB.QueryRow(query, id).Scan(
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+
+	defer cancel()
+
+	err := s.DB.QueryRowContext(ctx, query, id).Scan(
 		&sport.ID,
 		&sport.CreatedAt,
 		&sport.Title,
@@ -88,7 +96,7 @@ func (s SportsModel) Update(sport *Sports) error {
 	query := `
 			  UPDATE sports
 			  SET title = $1, description = $2, type = $3, brand = $4, sex = $5, sports_equipment_number = $6, version = version + 1
-			  WHERE id = $7
+			  WHERE id = $7 AND version = $8
 			  RETURNING version`
 
 	args := []interface{}{
@@ -98,10 +106,24 @@ func (s SportsModel) Update(sport *Sports) error {
 		sport.Brand,
 		sport.Sex,
 		sport.SportsEquipmentNumber,
+		sport.Version,
 		sport.ID,
 	}
 
-	return s.DB.QueryRow(query, args...).Scan(&sport.Version)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := s.DB.QueryRowContext(ctx, query, args...).Scan(&sport.Version)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (s SportsModel) Delete(id int64) error {
@@ -113,7 +135,10 @@ func (s SportsModel) Delete(id int64) error {
 			  DELETE FROM sports
 			  WHERE id = $1`
 
-	result, err := s.DB.Exec(query, id)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := s.DB.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}
