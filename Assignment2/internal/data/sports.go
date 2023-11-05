@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"Assignment2/internal/validator"
@@ -153,4 +154,62 @@ func (s SportsModel) Delete(id int64) error {
 	}
 
 	return nil
+}
+
+func (s SportsModel) GetAll(title string, typeOf string, brand string, sex string, filters Filters) ([]*Sports, Metadata, error) {
+	query := fmt.Sprintf(`
+			  SELECT count(*) OVER(), id, created_at, title, description, type, brand, sex, sports_equipment_number, version
+			  FROM sports
+			  WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '')
+			  AND (LOWER(type) = LOWER($2) OR $2 = '')
+			  AND (LOWER(brand) = LOWER($3) OR $3 = '')
+			  AND (LOWER(sex) = LOWER($4) OR $4 = '')
+			  ORDER BY %s %s, id ASC
+			  LIMIT $5 OFFSET $6`, filters.sortColumn(), filters.sortDirection())
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []interface{}{title, typeOf, brand, sex, filters.limit(), filters.offset()}
+
+	rows, err := s.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+
+	defer rows.Close()
+
+	totalRecords := 0
+	sports := []*Sports{}
+
+	for rows.Next() {
+		var sport Sports
+
+		err := rows.Scan(
+			&totalRecords,
+			&sport.ID,
+			&sport.CreatedAt,
+			&sport.Title,
+			&sport.Description,
+			&sport.Type,
+			&sport.Brand,
+			&sport.Sex,
+			&sport.SportsEquipmentNumber,
+			&sport.Version,
+		)
+
+		if err != nil {
+			return nil, Metadata{}, err
+		}
+
+		sports = append(sports, &sport)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, Metadata{}, err
+	}
+
+	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+
+	return sports, metadata, nil
 }
