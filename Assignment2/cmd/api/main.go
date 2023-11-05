@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Assignment2/internal/data"
 	"context"
 	"database/sql"
 	"flag"
@@ -29,6 +30,7 @@ type config struct {
 type application struct {
 	config config
 	logger *log.Logger
+	models data.Models
 }
 
 func main() {
@@ -51,12 +53,12 @@ func main() {
 	}
 
 	defer db.Close()
-
 	logger.Printf("database connection pool established")
 
 	app := &application{
 		config: cfg,
 		logger: logger,
+		models: data.NewModels(db),
 	}
 
 	srv := &http.Server{
