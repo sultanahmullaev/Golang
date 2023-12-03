@@ -178,7 +178,7 @@ func (app *application) deleteSportHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (app *application) listSportsHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) listSportHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Title string
 		Type  string
@@ -200,7 +200,7 @@ func (app *application) listSportsHandler(w http.ResponseWriter, r *http.Request
 	input.Filters.PageSize = app.readInt(qs, "page_size", 20, v)
 
 	input.Filters.Sort = app.readString(qs, "sort", "id")
-	input.Filters.SortSafelist = []string{"id", "title", "year", "runtime", "-id", "-title", "-year", "-runtime"}
+	input.Filters.SortSafelist = []string{"id", "title", "type", "brand", "sex", "sports_equipment_number", "-id", "-title", "-type", "-brand", "-sex", "-sports_equipment_number"}
 
 	if data.ValidateFilters(v, input.Filters); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
