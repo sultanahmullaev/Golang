@@ -15,4 +15,3 @@ EXPOSE 5432
 
 CMD ["migrate -path ./migrations -database postgres://sports:pa55word@db:5432/sports?sslmode=disable up"]
 CMD ["./main"]
-CMD ["./main"]
